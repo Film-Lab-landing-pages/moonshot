@@ -1,0 +1,503 @@
+* {
+    padding: 0;
+    margin: 0;
+    font-family: Arial;
+    transition: all 1s;
+    color: black;
+    scroll-behavior: smooth;
+    font-family: JJ_CircularTT-Medium;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+section {
+    width: 100%;
+    height: 100vh;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: -150vh;
+    /*  box-shadow: 1px 5px 13px 8px gray; */
+}
+
+input {
+    width: 100%;
+    font-size: 2vw;
+}
+
+h1 {
+    font-size: 3.5vw;
+    font-weight: bolder;
+    font-family: JJ_CircularTT-Bold;
+}
+
+h2 {
+    font-size: 2.3vw;
+}
+
+@font-face {
+    font-family: JJ_CircularTT-Medium;
+    src: url("./font/JJCircularTT-Medium.woff");
+}
+
+@font-face {
+    font-family: JJ_CircularTT-Bold;
+    src: url("./font/JJCircularTT-Bold.woff");
+}
+
+.row {
+    margin: 0;
+}
+
+#section1 {
+    top: 0;
+}
+
+.container {
+    position: relative;
+    border: 1px solid #060606;
+    border-top: 0;
+    border-bottom: 0;
+}
+
+.button {
+    cursor: pointer;
+}
+
+input:focus-visible {
+    outline: 0;
+}
+
+input::placeholder {
+    color: black;
+}
+
+.animaastroboy {
+    animation: astroboy 5s infinite;
+}
+
+.animanave {
+    animation: nave 5s infinite;
+    transition: none;
+    transform: translate(0, -5%);
+}
+
+.glow {
+    animation: glow 1s infinite;
+}
+
+.shake {
+    animation: shake 1s infinite;
+    transition: none;
+    pointer-events: none;
+}
+
+.fade {
+    opacity: 0;
+}
+
+.minicontinue {
+    position: absolute;
+    bottom: 14%;
+    right: 15%;
+    animation: seta 1s infinite;
+}
+
+.asteroide {
+    position: absolute;
+    right: -50vw;
+}
+
+.alerta {
+    animation: alerta 2s infinite;
+    position: absolute;
+    pointer-events: none;
+}
+
+#child.zoom {
+    animation: zoomin 4s normal;
+}
+
+#ast1 {
+    animation: asteroide 5s infinite;
+}
+
+#ast2 {
+    animation: asteroide 3s infinite;
+}
+
+#ast3 {
+    animation: asteroide 2s infinite;
+}
+
+#ast4 {
+    animation: asteroide 6s infinite;
+}
+
+#troca b {
+    text-transform: uppercase;
+    font-size: 3vw;
+}
+
+.blink {
+    animation: blinkx 1s infinite;
+    transform: translate(0, 0vh) !important;
+}
+
+.fadein {
+    animation: fadein 1s;
+    animation-fill-mode: forwards;
+}
+
+.landing {
+    animation: landing 1s;
+    animation-fill-mode: forwards;
+}
+
+.fadein:hover {
+    opacity: 0.8;
+}
+
+.fadex {
+    animation: fadex 2s;
+}
+
+.fadex2 {
+    animation: fadex 2s;
+}
+
+.moon {
+    animation-name: astroboy;
+    animation-iteration-count: infinite;
+}
+
+#moon01v,
+#moon02v,
+#moon03v {
+    animation: none;
+}
+
+img.point {
+    position: absolute;
+    z-index: 9;
+    bottom: 0;
+    right: 10%;
+    width: 20%;
+}
+
+.swiper-button-next::after,
+.swiper-button-prev::after {
+    display: none;
+}
+
+.swiper-button-next {
+    width: 60px;
+    height: 60px;
+    background-image: url('./images/continuar2.png');
+    background-size: 100%;
+    transform: rotate(-90deg);
+}
+
+.swiper-button-prev {
+    width: 60px;
+    height: 60px;
+    background-image: url('./images/continuar2.png');
+    background-size: 100%;
+    transform: rotate(90deg);
+}
+
+.astronumberbox {
+    position: absolute;
+    top: -38%;
+    right: 12%;
+    width: 19%;
+}
+
+#landscape {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+    padding-top: 100%;
+    padding-bottom: 100%;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: centers;
+}
+
+@keyframes landing {
+    0% {
+        transform: translate(0, -150vh);
+    }
+    100% {
+        transform: translate(0, 0vh);
+    }
+}
+
+@keyframes fadein {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes fadex {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes blinkx {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes alerta {
+    0% {
+        background-color: #cc00337a;
+    }
+    50% {
+        background-color: #cc003300;
+    }
+    100% {
+        background-color: #cc00337a;
+    }
+}
+
+@keyframes asteroide {
+    0% {
+        right: -50vw;
+    }
+    100% {
+        right: 150vw;
+    }
+}
+
+@keyframes seta {
+    0% {
+        right: 15%;
+    }
+    50% {
+        right: 16%;
+    }
+    100% {
+        right: 15%;
+    }
+}
+
+@keyframes zoomin {
+    0% {
+        transform: scale(1);
+        background-position: 0 0;
+    }
+    100% {
+        transform: scale(1.5);
+        background-position: -230px 64px;
+    }
+}
+
+@keyframes shake {
+    0% {
+        transform: translate(0, 0px);
+    }
+    20% {
+        transform: translate(10px, -5px);
+    }
+    40% {
+        transform: translate(-10px, 0px);
+    }
+    60% {
+        transform: translate(10px, -5px);
+    }
+    80% {
+        transform: translate(-10px, 0px);
+    }
+    100% {
+        transform: translate(0, 0px);
+    }
+}
+
+@keyframes nave {
+    0% {
+        transform: translate(-5%, 0);
+    }
+    50% {
+        transform: translate(5%, 0);
+    }
+    100% {
+        transform: translate(-5%, 0);
+    }
+}
+
+@keyframes astroboy {
+    0% {
+        transform: translate(0, -5%);
+    }
+    50% {
+        transform: translate(0, 5%);
+    }
+    100% {
+        transform: translate(0, -5%);
+    }
+}
+
+@keyframes glow {
+    0% {
+        box-shadow: 0 0 0px #00FFD1, 0 0 0px #00FFD1, 0 0 0px #00FFD1;
+    }
+    50% {
+        box-shadow: 0 0 10px #00FFD1, 0 0 40px #00FFD1, 0 0 80px#00FFD1;
+    }
+    100% {
+        box-shadow: 0 0 0px #00FFD1, 0 0 0px #00FFD1, 0 0 0px #00FFD1;
+    }
+}
+
+.hideondesktop {
+    display: none;
+}
+
+.absolute {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    margin: auto;
+}
+
+#section10 {
+    scroll-behavior: smooth;
+    overflow: overlay;
+}
+
+#section10::-webkit-scrollbar {
+    width: 7px;
+}
+
+
+/* Track */
+
+#section10::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+
+/* Handle */
+
+#section10::-webkit-scrollbar-thumb {
+    background: #222443;
+}
+
+
+/* Handle on hover */
+
+#section10::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+#nave2 {
+    pointer-events: none;
+}
+
+.h4,
+h4 {
+    font-size: 1.7vw;
+}
+
+@media (min-width: 1200px) {
+    .h4,
+    h4 {
+        font-size: 1.7vw;
+    }
+}
+
+@media (max-width: 900px) {
+    h1 {
+        font-size: 1rem !important;
+        text-align: right;
+    }
+    h1 br {
+        display: none;
+    }
+    h1 b span,
+    h1 span {
+        font-size: 1.5rem !important;
+    }
+    h2 {
+        font-size: 1rem !important;
+    }
+    .container {
+        max-width: 100% !important;
+    }
+    .hideonmobile {
+        display: none;
+    }
+    .hideondesktop {
+        display: block;
+    }
+    h4 {
+        font-size: 1rem;
+    }
+    #troca b {
+        font-size: 1rem;
+    }
+    .swiper-button-prev,
+    .swiper-button-next {
+        width: 40px;
+        height: 40px;
+    }
+    img#avancamenu2,
+    img#avancamenu3,
+    img#avancamenu4,
+    img#avancamenu6 {
+        width: 35% !important;
+    }
+    img#avancamenu5 {
+        width: 10% !important;
+    }
+    img#avancamenu25 {
+        width: 70% !important;
+        margin: 0 auto !important;
+        display: block;
+    }
+    img#avancamenu3 {
+        position: absolute;
+        bottom: 5%;
+        right: 5%;
+        width: 15% !important;
+    }
+    img#avancamenu4 {
+        width: 15% !important;
+    }
+    img#avancamenu5 {
+        width: 20% !important;
+    }
+}

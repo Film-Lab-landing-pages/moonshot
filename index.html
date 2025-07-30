@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>JOHNSON & JOHNSON</title>
+    <link rel="stylesheet" href="package/css/swiper.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="shortcut icon" href="/icon.ico" type="image/x-icon" />
+    <link href="style.css" rel="stylesheet">
+    <script src="scormfunctions.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        /*************************************/
+        //functions for sizing the iFrame
+        /*************************************/
+        function setIframeHeight(id, navWidth) {
+            if (document.getElementById) {
+                var theIframe = document.getElementById(id);
+                if (theIframe) {
+                    var height = getWindowHeight();
+                    theIframe.style.height = Math.round(height) - navWidth + "px";
+                    theIframe.style.marginTop = Math.round(((height - navWidth) - parseInt(theIframe.style.height)) / 2) + "px";
+                }
+            }
+        }
+
+        function getWindowHeight() {
+            var height = 0;
+            if (window.innerHeight) {
+                height = window.innerHeight - 18;
+            } else if (document.documentElement && document.documentElement.clientHeight) {
+                height = document.documentElement.clientHeight;
+            } else if (document.body && document.body.clientHeight) {
+                height = document.body.clientHeight;
+            }
+            return height;
+        }
+
+        function SetupIFrame() {
+            //set our iFrame for the content to take up the full screen except for our navigation
+            var navWidth = 40;
+            setIframeHeight("contentFrame", navWidth);
+            //need this in a setTimeout to avoid a timing error in IE6
+            window.setTimeout('window.onresize = function() { setIframeHeight("contentFrame", ' + navWidth + '); }', 1000);
+        }
+
+        /*************************************/
+        //content definition
+        /*************************************/
+        var pageArray = new Array(1);
+
+        pageArray[0] = "Playing/index.html";
+
+        /*************************************/
+        //navigation functions
+        /*************************************/
+
+        var currentPage = null;
+        var startTimeStamp = null;
+        var processedUnload = false;
+        var reachedEnd = false;
+
+        function doStart() {
+
+            //get the iFrame sized correctly and set up
+            SetupIFrame();
+
+            //record the time that the learner started the SCO so that we can report the total time
+            startTimeStamp = new Date();
+
+            //initialize communication with the LMS
+            ScormProcessInitialize();
+
+            //it's a best practice to set the lesson status to incomplete when
+            //first launching the course (if the course is not already completed)
+            var completionStatus = ScormProcessGetValue("cmi.core.lesson_status");
+            if (completionStatus == "not attempted") {
+                ScormProcessSetValue("cmi.core.lesson_status", "incomplete");
+            }
+
+            //see if the user stored a bookmark previously (don't check for errors
+            //because cmi.core.lesson_location may not be initialized
+            var bookmark = ScormProcessGetValue("cmi.core.lesson_location");
+
+            //if there isn't a stored bookmark, start the user at the first page
+            if (bookmark == "") {
+                currentPage = 0;
+            } else {
+                currentPage = 0;
+
+            }
+
+
+        }
+
+
+        function doUnload(pressedExit) {
+
+            //don't call this function twice
+            if (processedUnload == true) {
+                return;
+            }
+
+            processedUnload = true;
+
+            //record the section time
+            var endTimeStamp = new Date();
+            var totalMilliseconds = (endTimeStamp.getTime() - startTimeStamp.getTime());
+            var scormTime = ConvertMilliSecondsToSCORMTime(totalMilliseconds, false);
+
+            ScormProcessSetValue("cmi.core.section_time", scormTime);
+
+            //if the user just closes the browser, we will default to saving 
+            //their progress data. If the user presses exit, he is prompted.
+            //If the user reached the end, the exit normall to submit results.
+            if (pressedExit == false && reachedEnd == false) {
+                ScormProcessSetValue("cmi.core.exit", "suspend");
+            }
+
+            ScormProcessFinish();
+        }
+
+        function doPrevious() {
+            if (currentPage > 0) {
+                currentPage--;
+            }
+        }
+
+        function doNext() {
+            if (currentPage < (pageArray.length - 1)) {
+                currentPage++;
+            }
+        }
+
+        function doExit() {
+            pressedExit = true;
+            reachedEnd = true;
+            //note use of short-circuit AND. If the user reached the end, don't prompt.
+            //just exit normally and submit the results.
+            //if (reachedEnd == false && confirm("Would you like to save your progress to resume later?")) {
+            //set exit to suspend
+            // ScormProcessSetValue("cmi.core.exit", "suspend");
+            //}
+            // else {
+            //set exit to normal
+            ScormProcessSetValue("cmi.core.exit", "");
+            //}
+
+            //process the unload handler to close out the section.
+            //the presense of an adl.nav.request will cause the LMS to 
+            //take the content away from the user.
+            doUnload(true);
+        }
+
+        //called from the assessmenttemplate.html page to record the results of a test
+        //passes in score as a percentage
+        function RecordTest(score) {
+            ScormProcessSetValue("cmi.core.score.raw", score);
+            ScormProcessSetValue("cmi.core.score.min", "0");
+            ScormProcessSetValue("cmi.core.score.max", "100");
+
+            //if we get a test result, set the lesson status to passed/failed instead of completed
+            //consider 70% to be passing
+            if (score >= 70) {
+                ScormProcessSetValue("cmi.core.lesson_status", "passed");
+            } else {
+                ScormProcessSetValue("cmi.core.lesson_status", "failed");
+            }
+        }
+
+        RecordTest(100)
+
+        //SCORM requires time to be formatted in a specific way
+        function ConvertMilliSecondsToSCORMTime(intTotalMilliseconds, blnIncludeFraction) {
+
+            var intHours;
+            var intintMinutes;
+            var intSeconds;
+            var intMilliseconds;
+            var intHundredths;
+            var strCMITimeSpan;
+
+            if (blnIncludeFraction == null || blnIncludeFraction == undefined) {
+                blnIncludeFraction = true;
+            }
+
+            //extract time parts
+            intMilliseconds = intTotalMilliseconds % 1000;
+
+            intSeconds = ((intTotalMilliseconds - intMilliseconds) / 1000) % 60;
+
+            intMinutes = ((intTotalMilliseconds - intMilliseconds - (intSeconds * 1000)) / 60000) % 60;
+
+            intHours = (intTotalMilliseconds - intMilliseconds - (intSeconds * 1000) - (intMinutes * 60000)) / 3600000;
+
+            /*
+            deal with exceptional case when content used a huge amount of time and interpreted CMITimstamp 
+            to allow a number of intMinutes and seconds greater than 60 i.e. 9999:99:99.99 instead of 9999:60:60:99
+            note - this case is permissable under SCORM, but will be exceptionally rare
+            */
+
+            if (intHours == 10000) {
+                intHours = 9999;
+
+                intMinutes = (intTotalMilliseconds - (intHours * 3600000)) / 60000;
+                if (intMinutes == 100) {
+                    intMinutes = 99;
+                }
+                intMinutes = Math.floor(intMinutes);
+
+                intSeconds = (intTotalMilliseconds - (intHours * 3600000) - (intMinutes * 60000)) / 1000;
+                if (intSeconds == 100) {
+                    intSeconds = 99;
+                }
+                intSeconds = Math.floor(intSeconds);
+
+                intMilliseconds = (intTotalMilliseconds - (intHours * 3600000) - (intMinutes * 60000) - (intSeconds * 1000));
+            }
+
+            //drop the extra precision from the milliseconds
+            intHundredths = Math.floor(intMilliseconds / 10);
+
+            //put in padding 0's and concatinate to get the proper format
+            strCMITimeSpan = ZeroPad(intHours, 4) + ":" + ZeroPad(intMinutes, 2) + ":" + ZeroPad(intSeconds, 2);
+
+            if (blnIncludeFraction) {
+                strCMITimeSpan += "." + intHundredths;
+            }
+
+            //check for case where total milliseconds is greater than max supported by strCMITimeSpan
+            if (intHours > 9999) {
+                strCMITimeSpan = "9999:99:99";
+
+                if (blnIncludeFraction) {
+                    strCMITimeSpan += ".99";
+                }
+            }
+
+            return strCMITimeSpan;
+
+        }
+
+        function ZeroPad(intNum, intNumDigits) {
+
+            var strTemp;
+            var intLen;
+            var i;
+
+            strTemp = new String(intNum);
+            intLen = strTemp.length;
+
+            if (intLen > intNumDigits) {
+                strTemp = strTemp.substr(0, intNumDigits);
+            } else {
+                for (i = intLen; i < intNumDigits; i++) {
+                    strTemp = "0" + strTemp;
+                }
+            }
+
+            return strTemp;
+        }
+    </script>
+</head>
+
+<body onload="doStart(false);window.scrollTo(0,0)" onbeforeunload="doUnload(false);" onunload="doUnload();">
+    <div class="container" style="padding: 0;">
+        <section id="section1" style="background-image: url('./images/bgs1.png');flex-direction: column;background-position: right;position: relative;overflow: hidden;">
+            <div class="row" style="justify-content: center;align-items: center;">
+                <div class="col-10">
+                    <img src="./images/logo.png" style="width: 100%;margin-bottom: 10%;">
+                </div>
+            </div>
+            <div class="row" style="justify-content: center;align-items: center;margin-top: 5%;">
+                <div class="col-5">
+                    <img class="button" onclick="section(1)" src="./images/comecar.png" style="width: 100%;">
+                </div>
+            </div>
+            <img src="./images/logoacademy.png" style="position: absolute;bottom: 5%;left: 0;right: 0;margin: auto;width: 30%;">
+            <img class="" src="./images/moon.png" style="position: absolute;right: -12%;bottom: -25%;width: 45%;animation: nave 10s infinite;">
+        </section>
+        <section id="section2" style="background-image: url('./images/bgs2.png');flex-direction: column;align-items: flex-start;overflow: hidden;">
+            <div class="row" style="width: 100%;">
+                <div class="col-12" style="display: flex;justify-content: flex-end;">
+                    <div class="row" style="width: 70%;padding-right: 5%;margin-bottom: 5%;">
+                        <h3 class="hideondesktop" style="text-align: center;">Como você gostaria de ser chamado(a)?</h3>
+                        <h1 class="hideonmobile" style="text-align: center;">Como você gostaria de ser chamado(a)?</h1>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="justify-content:flex-start;align-items: center;">
+                <div class="col-12 col-sm-10" style="padding: 0;">
+                    <div class="row" style="background-color: black;padding:3%;border-radius: 0 100px 100px 0;justify-content: flex-end;">
+                        <div class="col-8" style="position: relative;">
+                            <img src="./images/bginput.png" style="width: 100%;">
+                            <div class="absolute" style="width: fit-content;height: fit-content;">
+                                <input onkeyup="namex(this.value)" type="text" placeholder="Digite aqui" style="background: transparent;border: 0;text-align: center;color: black;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="width:100%;display: flex;justify-content: flex-end;">
+                <div class="col-10" style="padding: 0;">
+                    <img id="namenext" onclick="section(2)" src="./images/continuar.png" style="cursor: pointer;width: 13%;margin: 4% auto 0px;display: block;pointer-events: none;opacity: 0.5">
+                </div>
+            </div>
+        </section>
+        <section id="section3" style="background-image: url('./images/bgs3.png');flex-direction: column;">
+            <div class="row" style="width: 100%;">
+                <div class="col-5" style="height: 100vh;cursor: pointer;" onclick="section(3)">
+                </div>
+                <div class="col-6">
+                    <div class="row" style="display: flex;justify-content: center;align-items: center;height: 90vh;background-color: black;border-radius: 0 0 50% 50%;">
+                        <div class="col-9" style="position: relative;">
+                            <div style="position: absolute;top: 0;bottom: 0;right: 0;left: 0;">
+                                <div style="position: relative;height: 100%;width: 100%;display: flex;justify-content: center;align-items: center;padding: 10% 15%;">
+                                    <h2 style="color: white;font-size: 3vw;transform: translate(0,-15%);text-align: center;;">
+                                        Está chegando o momento, <span class="namex" style="font-weight: bolder;color: white;font-size: inherit;"></span>! Clique na nave para embarcar!
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="section4" style="flex-direction: column;">
+            <div class="row" style="width: 100%;height: 100vh;justify-content: center;align-items: center;">
+                <video id="video1" onended="section(4)" style="width: 100%;height: 100%;padding: 0;">
+                    <source src="./medias/indo.m4v" type="video/mp4">
+                </video>
+            </div>
+        </section>
+        <!--   <section id="section5" style="flex-direction: column;overflow: hidden;">
+            <div class="row parent absolute">
+                <div id="child" class="child" style="background-image: url('./images/bgs4.png');background-size: 100%;"></div>
+            </div>
+            <div class="row" style="width: 100%;">
+                <div class="col-2">
+                </div>
+                <div class="col-6">
+                    <div class="row" style="display: flex;justify-content: center;align-items: center;margin-bottom: 15%;">
+                        <div id="boxlua" class="col-9" style="position: relative;">
+                            <img src="./images/boxs4.png" style="width: 100%;">
+                            <div class="absolute">
+                                <div style="position: relative;height: 100%;width: 100%;display: flex;justify-content: center;align-items: center;padding: 10% 15%;">
+                                    <h2>
+                                        <span class="namex" style="font-weight: bolder;"></span> nossa aventura MOONSHOT começa agora! Vamos decolar?
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row absolute" style="pointer-events: none;overflow: hidden;">
+                <div style="position: relative;height: 100%;display: flex;align-items: center;justify-content: center;">
+                    <img id="nave" src="./images/naves4.png" style="display: block;width: 95vw;max-width: 104vw;pointer-events: none;padding: 0;">
+                </div>
+            </div>
+            <div class="row absolute" style="display: block;">
+                <div style="position: relative;height: 100%;">
+                    <img id="decolar" onclick="decolar()" class="glow" src="./images/decolar.png" style="width: 15%;height: auto;cursor: pointer;position: absolute;bottom: 4%;left: 0;right: 0;margin: auto;border-radius: 20px;">
+                </div>
+            </div>
+        </section>
+        <section id="section6" style="flex-direction: column;overflow: hidden;">
+            <div class="row parent absolute">
+                <div id="child" class="child" style="background-image: url('./images/bgs6.png');background-size: 100%;animation: nave 15s infinite;"></div>
+            </div>
+            <div class="row" style="width: 100%;">
+                <div class="col-12">
+                    <div class="row" style="display: flex;justify-content: center;align-items: center;margin-bottom: 10%;">
+                        <div id="boxlua" class="col-9" style="position: relative;cursor: pointer;" onclick="section(6)">
+                            <img src="./images/boxs4.png" style="width: 50%;margin: 0 auto;display: block;">
+                            <div class="absolute">
+                                <div style="position: relative;height: 100%;width: 50%;display: flex;justify-content: center;align-items: center;padding: 5% 10%;margin: 0 auto;">
+                                    <h2 style="text-align: center;">
+                                        Aperte o cinto, estamos quase pousando na Lua.
+                                    </h2>
+                                    <div class="minicontinue" style="position: absolute;bottom: 15%;pointer-events: none;">Continuar →</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row absolute" style="pointer-events: none;overflow: hidden;">
+                <div style="position: relative;height: 100%;display: flex;align-items: center;justify-content: center;">
+                    <img id="nave2" class="shake" src="./images/naves4.png" style="display: block;width: 95vw;max-width: 104vw;pointer-events: none;padding: 0;">
+                </div>
+            </div>
+        </section>
+        <section id="section7" style="background-image: url('./images/bgs2.png');flex-direction: column;">
+            <div class="absolute" style="width: 100%;height: 100%;">
+                <div style="position: relative;">
+                    <img class="asteroide" id="ast1" src="./images/asteroide1.png" style="top: -5vh;">
+                    <img class="asteroide" id="ast2" src="./images/asteroide2.png" style="top: 75vh;margin: auto;display: block;">
+                    <img class="asteroide" id="ast3" src="./images/asteroide3.png" style="top: 40vh;">
+                    <img class="asteroide" id="ast4" src="./images/asteroide4.png" style="top: 30vh;">
+                </div>
+            </div>
+            <div class="row" style="justify-content: center;align-items: center;">
+                <div class="col-6">
+                    <img class="animanave" src="./images/nave.png" style="width: 100%;">
+                </div>
+                <div class="col-6">
+                    <div class="row">
+                        <div class="col-lg-7 col-sm-3" style="margin: 0 auto;">
+                            <img src="./images/alerta.png" style="width: 100%;margin-bottom: 10%;">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-10 col-sm-9" style="position: relative;margin: 0 auto;">
+                            <h2 style="text-align: center;">Sua nave colidiu com alguns asteróides durante o pouso e agora vamos precisar dos conhecimentos MOONSHOT para consertá-la.</h2>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-10" style="position: relative;margin: 0 auto;">
+                            <img onclick="section(7)" src="./images/continuar.png" style="cursor: pointer;width: 35%;margin: 4% auto 0;display: block;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="alerta" style="width: 100%;height: 100%; background-color: #CC0033;">
+
+            </div>
+        </section>-->
+        <section id="section5" style="background-image: url('./images/bgs5.jpg');background-position: center;flex-direction: column;">
+            <div class="row" style="justify-content: flex-start;align-items: center;height: 100vh;flex-wrap: nowrap;">
+                <div class="col-5" style="padding: 0;">
+                    <div class="row" style="display: flex;justify-content: center;align-items: center;height: 100vh;background-image: url(./images/bgmenu.png);background-position: right;background-size: cover;">
+                        <div id="boxlua" class="col-11" style="position: relative;height: 80vh;">
+                            <div class="absolute">
+                                <div class="row" style="position: relative;height: 100%;width: 100%;display: flex;justify-content: center;align-items: center;padding: 10% 15% 10% 0%;">
+                                    <div id="menu1" class="col-12" style="justify-content: space-between;height: 100%;display: flex;flex-direction: column;padding-left: 10%;">
+                                        <img class="01" src="./images/01.png" style="animation-delay: 1.5s;opacity: 0;width: 100%;cursor: pointer;" onclick="this.style.opacity='0.5';menu(this.className);this.style.animationFillMode='none';">
+                                        <img class="02" src="./images/02.png" style="animation-delay: 2s;opacity: 0;width: 100%;cursor: pointer;" onclick="this.style.opacity='0.5';menu(this.className);this.style.animationFillMode='none';">
+                                        <img class="03" src="./images/03.png" style="animation-delay: 2.5s;opacity: 0;width: 100%;cursor: pointer;" onclick="this.style.opacity='0.5';menu(this.className);this.style.animationFillMode='none';">
+                                        <img class="04" src="./images/04.png" style="animation-delay: 3s;opacity: 0;width: 100%;cursor: pointer;" onclick="this.style.opacity='0.5';menu(this.className);this.style.animationFillMode='none';">
+                                        <img class="05" src="./images/05.png" style="animation-delay: 3.5s;opacity: 0;width: 100%;cursor: pointer;" onclick="this.style.opacity='0.5';menu(this.className);this.style.animationFillMode='none';">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-2"></div>
+                <div class="col-5" style="padding-right: 5%;">
+                    <div class="row" style="height: 50vh;">
+                        <div class="col-12" style="padding-top: 5%; display: flex;align-items: center;justify-content: center;">
+                            <h4 id="troca" style="text-align: center;animation-delay: 4s;opacity: 0;color: white;">
+                                <b style="color: white;"> </b><br><br>Começaremos a explorar os aspectos do MOONSHOT. Clique nos tópicos ao lado para acessar as informações.
+                            </h4>
+                        </div>
+                    </div>
+                    <div class="row" style="height: 50vh;margin-top: 5%;">
+                        <div class="col-5" style="position: relative;">
+                        </div>
+                        <div id="continuenave" class="col-7" style="display: flex;justify-content: center;align-items: center;">
+                            <img id="naveconserto" src="./images/nave.png" style="width: 100%;cursor: pointer;z-index: 999;animation-delay: 4.5s;transform: translate(0,-150vh);">
+                        </div>
+                        <!--    <div class="col-1" style="display: flex;flex-direction: column;justify-content: flex-end;padding-bottom: 5%;">
+                            <div id="e3" style="animation-delay: 6s;padding: 5px;border-radius: 100%;width: fit-content;background-color: #cc0033b0;transform: translate(0,-150vh);"><img src="./images/engine.png"></div>
+                            <div id="e2" style="animation-delay: 5.5s;padding: 5px;border-radius: 100%;width: fit-content;background-color: #cc0033b0;transform: translate(0,-150vh);"><img src="./images/engine.png"></div>
+                            <div id="e1" style="animation-delay: 5s;padding: 5px;border-radius: 100%;width: fit-content;background-color: #cc0033b0;transform: translate(0,-150vh);"><img src="./images/engine.png"></div>
+                        </div>-->
+                    </div>
+                </div>
+            </div>
+            <div style="position: absolute;bottom: 5%;left: 0;right: 0;margin: auto;width: fit-content;">
+                <img id="avancamenu" src="./images/continuar3.png" onclick="section(5)" style="width:50%;opacity: 0;pointer-events: none;cursor: pointer;display: block;margin: 0 auto;">
+            </div>
+        </section>
+        <section id="section6" style="background-image: url('./images/bgs6.png');flex-direction: column;">
+            <div class="row" style="justify-content:flex-start;align-items: center;width: 100%;">
+                <div class="col-10" style="padding: 0;">
+                    <div class="row" style="background-color: black;padding: 1% 3%;border-radius: 0 100px 100px 0;justify-content: flex-end;height: fit-content;margin-bottom: 5%;">
+                        <div class="col-lg-11" style="position: relative;">
+                            <h1 style="color:white">Como colocar em prática?</h1>
+                            <h4 style="border: 2px white solid;padding: 2%; color:white;border-radius: 100px;text-align: center;"><b style="color:white">Três fatores</b> são essenciais para a construção de um <b style="color:white">MOONSHOT:</b></h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="justify-content:flex-start;align-items: center;width: 100%;padding: 0 10%;">
+                <div class="col-lg-4 col-sm-3" style="position: relative;"><img id="moon01" onclick="moon(this.id)" class="moon" src="./images/moon01.png" style="width: 90%;cursor: pointer;animation-duration: 10s;"><img class="point" src="./images/point.png" onclick="moon(document.getElementsByClassName('moon')[0].id)"
+                        style="cursor: pointer"></div>
+                <div class="col-lg-4 col-sm-3" style="position: relative;"><img id="moon02" onclick="moon(this.id)" class="moon" src="./images/moon02.png" style="width: 90%;cursor: pointer;animation-duration: 8s;"><img class="point" src="./images/point.png" onclick="moon(document.getElementsByClassName('moon')[1].id)"
+                        style="cursor: pointer"></div>
+                <div class="col-lg-4 col-sm-3" style="position: relative;"><img id="moon03" onclick="moon(this.id)" class="moon" src="./images/moon03.png" style="width: 90%;cursor: pointer;animation-duration: 9s;"><img class="point" src="./images/point.png" onclick="moon(document.getElementsByClassName('moon')[2].id)"
+                        style="cursor: pointer"></div>
+                <div class="col-lg-0 col-sm-3">
+                    <img class="hideondesktop" id="avancamenu25" src="./images/continuar.png" onclick="section(6)" style="width:50%;margin:0 auto;opacity: 0;pointer-events: none;cursor: pointer;">
+                </div>
+            </div>
+            <div class="row" style="margin-top: 3%;">
+                <div class="checkmoon01" style="display: none;"></div>
+                <div class="checkmoon02" style="display: none;"></div>
+                <div class="checkmoon03" style="display: none;"></div>
+                <img class="hideonmobile" id="avancamenu2" src="./images/continuar.png" onclick="section(6)" style="width:50%;margin:0 auto;opacity: 0;pointer-events: none;cursor: pointer;">
+            </div>
+        </section>
+        <section id="section7" style="flex-direction: column;">
+            <div class="row" style="width: 100%;height: 100vh;justify-content: center;align-items: center;">
+                <video id="video2" onended="section(7)" style="width: 100%;height: 100%;padding: 0;">
+                    <source src="./medias/voando.m4v" type="video/mp4">
+                </video>
+            </div>
+        </section>
+        <section id="section8" style="background-image: url('./images/bgs8.png');flex-direction: column;">
+            <div class="row" style="justify-content:flex-start;align-items: center;width: 100%;">
+                <div class="col-10" style="padding: 0;">
+                    <div class="row" style="background-color: black;padding: 1% 3%;border-radius: 0 100px 100px 0;justify-content: flex-end;height: fit-content;margin-bottom: 5%;">
+                        <div class="col-lg-10" style="position: relative;">
+                            <h1 style="font-size: 3vw;color:white;text-align: right;">Dicas para estimular o <br>pensamento MOONSHOT</h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row" style="justify-content:flex-start;align-items: center;width: 100%;padding: 0 5%;">
+                <div class="swiper mySwiper" style="width: 50%;padding: 0 3%;margin: 0 auto;overflow: hidden;position: relative;">
+                    <div class="swiper-wrapper">
+                        <div class="swiper-slide" style="width: 100%;"><img src="./images/slide1.png" style="width: 70%;margin: 0 auto;display: block;"></div>
+                        <div class="swiper-slide" style="width: 100%;"><img src="./images/slide2.png" style="width: 70%;margin: 0 auto;display: block;"></div>
+                        <div class="swiper-slide" style="width: 100%;"><img src="./images/slide3.png" style="width: 70%;margin: 0 auto;display: block;"></div>
+                        <div class="swiper-slide" style="width: 100%;"><img src="./images/slide4.png" style="width: 70%;margin: 0 auto;display: block;"></div>
+                    </div>
+                    <div class="swiper-button-next"></div>
+                    <div class="swiper-button-prev"></div>
+                </div>
+            </div>
+            <div class="row" style="margin-top: 3%;">
+                <img id="avancamenu3" src="./images/continuar.png" onclick="section(8)" style="width:50%;margin: 0 auto;opacity: 0;pointer-events: none;cursor: pointer;animation: astroboy 1s infinite;">
+            </div>
+        </section>
+        <section id="section9" style="background-image: url('./images/bgs9.png');flex-direction: column;">
+            <div class="row" style="width: 100%;flex-wrap: nowrap;">
+                <div class="col-5" style="height: 100vh;cursor: pointer;background-image: url('./images/bgastrogirl.png');background-size: cover;background-position: right;z-index: 9999;">
+                    <img onclick="astrochange()" src="./images/astrogirl.png" class="animaastroboy" style="width: 70%;">
+                </div>
+                <div class="col-7" style="display: flex;justify-content: center;align-items: center;flex-direction: column;">
+                    <div class="row" style="display: flex;justify-content: center;align-items: center;width: 120%;background-color: black;border-radius: 0 300px 300px 0;height: 50vh;margin: 0 0 0 -20%;position: relative;">
+                        <div class="col-8" style="position: relative;">
+                            <div style="position: absolute;top: 0;bottom: 0;right: 0;left: 0;">
+                                <div style="position: relative;height: 100%;width: 100%;display: flex;justify-content: center;align-items: center;">
+                                    <h2 id="astrochange" style="color: white;text-align: center;;">
+                                        Temos algumas reflexões para você! <br><br> Clique na astronauta para liberá-las.
+                                    </h2>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="astronumberbox">
+                            <img id="numberastro" src="./images/number01.png" style="width: 100%;opacity: 0;">
+                        </div>
+                    </div>
+                    <div class="row" style="padding-top: 5%;">
+                        <img id="avancamenu4" src="./images/continuar.png" onclick="section(9)" style="width: 13%;opacity: 0;pointer-events: none;cursor: pointer;animation: 1s ease 0s infinite normal none running astroboy;position: absolute;bottom: 4%;right: 0;left: 0;margin: auto;">
+                    </div>
+                </div>
+        </section>
+        <section id="section10" style="background-image: url('./images/bgs10.png');overflow-y: scroll;overflow-x: hidden;padding-bottom: 5%;flex-direction: column;">
+            <div class="row" style="background-color: black;padding: 10% 5% 5%;margin-top: 10%;">
+                <h2 style="color: white;">Que tal explorar novos territórios com sua nave?<br>Deslize a tela para baixo para descobrir os benefícios do MOONSHOT!</h2>
+                <h2 class="hideondesktop" style="color: white;">Clique na tela para mover a nave</h2>
+            </div>
+            <div id="naveboxplanetas" class="row" style="display: flex;width: 100%;flex-direction: column;height: 100%;position: relative;flex-wrap: nowrap;">
+                <img src="./images/bgplanetinhascaminho.png" style="width: 100%;">
+                <img id="nave2" src="./images/nave2.png" style="width: 10%;position: fixed;opacity: 0;">
+                <img id="avancamenu5" src="./images/continuar3.png" onclick="section(10)" style="width:13%;opacity: 1;cursor: pointer;animation: astroboy 1s infinite;margin: 5% auto;bottom: 0;">
+            </div>
+        </section>
+        <section id="section11" style="flex-direction: column;background-color: black;">
+            <div class="row" style="width: 100%;height: 100vh;justify-content: center;align-items: center;">
+                <video id="video3" onended="section(11)" style="width: 100%;height: 100%;padding: 0;">
+                    <source src="./medias/voltando.m4v" type="video/mp4">
+                </video>
+            </div>
+        </section>
+        <section id="section12" style="flex-direction: column;background-image: url('./images/bgs12.png');">
+            <div class="row" style="justify-content:flex-start;align-items: center;width: 100%;">
+                <div class="col-6" style="padding: 0;">
+                    <div class="row" style="background-color: black;padding: 1% 3%;border-radius: 0 100px 100px 0;justify-content: flex-end;height: fit-content;margin-bottom: 5%;">
+                        <div class="col-lg-10" style="position: relative;">
+                            <h1 style="color:white">Tenha <br> em mente
+                            </h1>
+                        </div>
+                    </div>
+                    <div class="row" style="padding: 1% 3%;border-radius: 0 100px 100px 0;justify-content: flex-end;height: fit-content;margin-bottom: 5%;">
+                        <div class="col-lg-10" style="position: relative;">
+                            <h1 style="text-align: right;font-size: 1.5vw;"><b>Visar algo <span style="font-size: 2vw;">10 vezes </span>melhor, <br>vale <span style="font-size: 2vw;">100 vezes</span> mais</b>
+                                <br>e nunca será <span style="font-size: 2vw;">100 vezes</span> mais difícil! </h1>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 3%;">
+                        <img id="avancamenu6" src="./images/continuar.png" onclick="section(12)" style="width: 30%;cursor: pointer;margin: 0 auto;">
+                    </div>
+                </div>
+                <div class="col-6">
+                    <img src="./images/astrogirl.png" class="animaastroboy" style="width: 70%;margin: 0 auto;display: block;">
+                </div>
+            </div>
+            <!--       <div class="row" style="justify-content:flex-start;align-items: center;width: 100%;padding: 0 5%;">
+
+                <div class="col-10" style="padding: 0;">
+                    <div class="row" style="padding: 1% 3%;border-radius: 0 100px 100px 0;justify-content: flex-end;height: fit-content;margin-bottom: 5%;">
+                        <div class="col-lg-10" style="position: relative;">
+                            <h1 style="text-align: center;font-size: 2vw;"><b>Visar algo <span style="font-size: 2.5vw;">10 vezes </span>melhor, <br>vale <span style="font-size: 2.5vw;">100 vezes</span> mais</b>
+                                <br>e nunca será <span style="font-size: 2.5vw;">100 vezes</span> mais difícil! </h1>
+                        </div>
+                    </div>
+                </div>
+            </div>-->
+        </section>
+        <section onclick="encerrar()" id="section13" style="flex-direction: column;background-image: url('./images/bgs13.png');cursor: pointer;background-size: 100%;background-position: center;background-color: white;background-repeat: no-repeat;">
+        </section>
+        <div id="landscape" style="width: 100vw;height: 100vh;position: absolute;top: 0;bottom: 0;right: 0;left: 0;">
+            <img src="./images/landscape.png" style="width: 100%;">
+        </div>
+        </div>
+        <style>
+            polyline {
+                stroke-dasharray: 8;
+                stroke: black;
+                fill: none;
+                stroke-width: 1;
+            }
+        </style>
+        <script>
+            if (/Android|webOS|iPhone|iPad|Mac|Macintosh|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                const mql = window.matchMedia("(orientation: landscape)");
+                if (window.matchMedia("(orientation: landscape)").matches) {
+                    document.getElementById('landscape').style = "opacity:0;padding:0;height:0;width:0";
+                } else {
+                    document.getElementById('landscape').style = "opacity:1;";
+                }
+                mql.addEventListener("change", () => {
+                    if (window.matchMedia("(orientation: landscape)").matches) {
+                        document.getElementById('landscape').style = "opacity:0;padding:0;height:0;width:0";
+                    } else {
+                        document.getElementById('landscape').style = "opacity:1;";
+                    }
+                });
+            }
+
+
+            let circle = document.getElementById('nave2');
+            const onMouseMove = (e) => {
+                circle.style.left = (e.pageX - 100) + 'px';
+                circle.style.top = (e.pageY) + 'px';
+            }
+            document.addEventListener('mousemove', onMouseMove);
+            var astro = 0;
+
+            function astrochange(id) {
+                var change = document.getElementById('astrochange');
+                var changenum = document.getElementById('numberastro');
+
+                if (astro == 4) {
+                    change.innerHTML = "A meta é suficiente para levar os stakeholders a repensar seu envolvimento com a JJVC - Johnson&Johnson Vision Care em novos termos? ";
+                    changenum.src = "./images/number05.png";
+                    document.getElementById('avancamenu4').style.opacity = 1;
+                    document.getElementById('avancamenu4').style.pointerEvents = 'all';
+                    astro++;
+                }
+                if (astro == 3) {
+                    change.innerHTML = "Com stakeholders-chave, você é capaz de identificar, em um horizonte de cinco a dez anos, uma meta inspiradora e inspirada que, se alcançada, cimentará a nossa liderança de mercado no futuro?";
+                    changenum.src = "./images/number04.png";
+                    astro++;
+                }
+                if (astro == 2) {
+                    change.innerHTML = "Quais são as implicações da missão, dos valores e do propósito na JJVC – Johnson&Johnson Vision Care à luz dessas novas ideias? Qual seria a melhor forma de cumprir sua missão nos próximos cinco a dez anos?";
+                    changenum.src = "./images/number03.png";
+                    astro++;
+                }
+                if (astro == 1) {
+                    change.innerHTML = "Quais novas ideias - facilitadas pela tecnologia atual e pela ambição da próxima geração na JJVC – Johnson&Johnson Vision Care – têm o potencial de dar forma ao valor de ruptura?";
+                    changenum.src = "./images/number02.png";
+                    astro++;
+                }
+                if (astro == 0) {
+                    change.innerHTML = "Quais são os limites à criação de valor de seu modelo de negócio atual?";
+                    changenum.style.opacity = "1";
+                    astro++;
+                }
+            }
+
+            function moon(moon) {
+                if (moon == "moon01v" || moon == "moon02v" || moon == "moon03v") {
+                    console.log('moonx ' + moon);
+                    var moonx = moon.replace('v', '');
+                    document.getElementById(moon).style.opacity = 0;
+                    setTimeout(() => {
+                        document.getElementById(moon).style.opacity = 1;
+                        document.getElementById(moon).src = "./images/" + moonx + ".png";
+                        document.getElementById(moon).id = moonx;
+                    }, 1000);
+                } else {
+                    if (moon == "moon01" || moon == "moon02" || moon == "moon03") {
+                        document.getElementsByClassName('check' + moon)[0].innerHTML = 'ok';
+                        document.getElementById(moon).style.opacity = 0;
+                        setTimeout(() => {
+                            document.getElementById(moon).style.opacity = 1;
+                            document.getElementById(moon).src = "./images/" + moon + "v.png";
+                            document.getElementById(moon).id = moon + "v";
+                        }, 1000);
+                    }
+                }
+                if (document.getElementsByClassName('checkmoon01')[0].innerHTML == "ok" &&
+                    document.getElementsByClassName('checkmoon02')[0].innerHTML == "ok" &&
+                    document.getElementsByClassName('checkmoon03')[0].innerHTML == "ok") {
+                    document.getElementById('avancamenu2').style.opacity = 1;
+                    document.getElementById('avancamenu2').style.pointerEvents = 'all';
+                    document.getElementById('avancamenu25').style.opacity = 1;
+                    document.getElementById('avancamenu25').style.pointerEvents = 'all';
+                }
+            }
+
+            function displaynone() {
+                document.getElementById('sec1').style.display = "none";
+                document.getElementById('sec2').style.display = "none";
+                document.getElementById('sec3').style.display = "none";
+                document.getElementById('sec4').style.display = "none";
+                document.getElementById('sec5').style.display = "none";
+            }
+
+            function menu(targ) {
+                var troca = document.getElementById('troca');
+
+                if (targ == "01 fadein") {
+                    troca.innerHTML = "<b style='color: white;'>O que é?</b><br><br>MOONSHOT é uma forma de pensar o desenvolvimento de um negócio. É “mirar na lua” para conseguir resultados inimagináveis, com o apoio da tecnologia. ";
+                }
+                if (targ == "02 fadein") {
+                    troca.innerHTML = "<b style='color: white;'>O que já foi feito?</b><br><br>Projetos como carro autônomo, Google Glass, Prime Air (entrega por drones), são alguns exemplos. Google, Space X e Amazon são algumas das empresas que adotam o pensamento.";
+                }
+                if (targ == "03 fadein") {
+                    troca.innerHTML = "<b style='color: white;'>De onde surgiu?</b><br><br>O pensamento Moonshot é uma abordagem poderosa para se alcançar inovação em negócios e tem como principal propagadora a X Company, antiga Google X.";
+                }
+                if (targ == "04 fadein") {
+                    troca.innerHTML = "<b style='color: white;'>Como funciona?</b><br><br>Ao invés de tentar resolver problemas com melhorias incrementais, o diferencial está em pensar tão grande quanto 10 vezes maior do que as empresas em geral pensam.";
+                }
+                if (targ == "05 fadein") {
+                    troca.innerHTML = "<b style='color: white;'>Por que é bom?</b><br><br>Porque o processo criativo não muda, porém, ao invés de focar em otimizar, a equipe foca em reinventar completamente a solução diante de um desafio.";
+                }
+                if (document.getElementsByClassName('01')[0].style.opacity == "0.5" &&
+                    document.getElementsByClassName('02')[0].style.opacity == "0.5" &&
+                    document.getElementsByClassName('03')[0].style.opacity == "0.5" &&
+                    document.getElementsByClassName('04')[0].style.opacity == "0.5" &&
+                    document.getElementsByClassName('05')[0].style.opacity == "0.5") {
+                    document.getElementById('avancamenu').style.opacity = '1';
+                    document.getElementById('avancamenu').style.pointerEvents = 'all';
+                    document.getElementById('avancamenu').style.animation = "astroboy 1s infinite";
+                }
+            }
+
+            function section(num) {
+                var sold = document.getElementById("section" + Number(num));
+
+                if (num < 13) {
+                    var newx = num + 1;
+                    var snew = document.getElementById("section" + newx);
+                    sold.style.top = '110vh';
+                    snew.style.top = '0';
+                } else {
+                    var newx = num - 1;
+                    var snew = document.getElementById("section" + newx);
+                    sold.style.top = '-110vh';
+                    snew.style.top = '0';
+                }
+
+                if (num == 4) {
+                    var menu1 = document.getElementById('menu1');
+                    var menu1c = menu1.getElementsByTagName('img');
+                    var troca = document.getElementById('troca');
+                    var nave = document.getElementById('naveconserto');
+
+                    for (i = 0; i < menu1c.length; i++) {
+                        menu1c[i].classList.add('fadein');
+                    }
+                    troca.classList.add('fadein');
+                    nave.classList.add('landing');
+                }
+                if (num == 3) {
+                    document.getElementById('video1').play();
+                }
+                if (num == 6) {
+                    document.getElementById('video2').play();
+                }
+                if (num == 9) {
+                    document.getElementById('nave2').style.opacity = "1";
+                }
+                if (num == 10) {
+                    document.getElementById('video3').play();
+                    document.getElementById('nave2').style.opacity = "0";
+                }
+            }
+
+            function decolar() {
+                var nave = document.getElementById('nave');
+                var botao = document.getElementById('decolar');
+                var child = document.getElementById('child');
+                var boxlua = document.getElementById('boxlua');
+
+                nave.className = "shake";
+                botao.className = "shake";
+                child.className = "zoom";
+                boxlua.classList.add('fade');
+                setTimeout(() => {
+                    section(5);
+                    nave.className = "";
+                    botao.className = "";
+                }, 3500);
+            }
+
+            function animateDashPaths() {
+                var NS = "http://www.w3.org/2000/svg"
+                    //----Vienna----------------
+                var endLengthVienna = pathVienna.getTotalLength()
+                var lengthDeltaVienna = endLengthVienna / 200
+                var polylineVienna = document.createElementNS(NS, "polyline")
+                Layer_1.appendChild(polylineVienna)
+                var pntListVienna = polylineVienna.points
+                var iTVienna = setInterval(drawPathVienna, 5)
+                var cntVienna = 0
+
+                function drawPathVienna() {
+                    var len = lengthDeltaVienna * cntVienna++
+                        if (len < endLengthVienna) {
+                            var pnt = pathVienna.getPointAtLength(len)
+                            pntListVienna.appendItem(pnt)
+                        } else
+                            clearInterval(iTVienna)
+                }
+            }
+        </script>
+</body>
+
+<!-- Swiper JS -->
+<script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+
+<!--GSAP & SCROLLTRIGGER-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.6.1/gsap.min.js" integrity="sha512-cdV6j5t5o24hkSciVrb8Ki6FveC2SgwGfLE31+ZQRHAeSRxYhAQskLkq3dLm8ZcWe1N3vBOEYmmbhzf7NTtFFQ==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.6.1/ScrollTrigger.min.js" integrity="sha512-Q+G390ZU2qKo+e4q+kVcJknwfGjKJOdyu5mVMcR95NqL6XaF4lY4nsSvIVB3NDP54ACsS9rqhE1DVqgpApl//Q==" crossorigin="anonymous"></script>
+
+<script>
+    var mySwiper = new Swiper('.mySwiper', {
+        spaceBetween: 50,
+        pagination: {
+            el: '.swiper-pagination',
+            type: 'fraction',
+        },
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+    });
+    mySwiper.on('transitionEnd', function() {
+        console.log('slide');
+        if (mySwiper.activeIndex === 3) {
+            document.getElementById('avancamenu3').style.opacity = "1";
+            document.getElementById('avancamenu3').style.pointerEvents = "all";
+        }
+    });
+
+    function namex(valuex) {
+        var namex = document.getElementsByClassName('namex');
+        var namexl = document.getElementsByClassName('namex').length;
+        for (i = 0; i < namexl; i++) {
+            namex[i].innerHTML = valuex;
+        }
+
+        if (valuex != null && valuex != "" && valuex != " ") {
+            document.getElementById('namenext').style.animation = "astroboy 1s infinite";
+            document.getElementById('namenext').style.pointerEvents = "all";
+            document.getElementById('namenext').style.opacity = "1";
+        } else {
+            document.getElementById('namenext').style.animation = "";
+            document.getElementById('namenext').style.pointerEvents = "none";
+            document.getElementById('namenext').style.opacity = "0.5";
+        }
+    }
+
+    function encerrar() {
+        RecordTest(100);
+        setTimeout(function() {
+            ScormProcessFinish()
+        }, 500);
+    }
+</script>
+
+</html>

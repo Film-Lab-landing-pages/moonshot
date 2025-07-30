@@ -1,0 +1,59 @@
+Return-Path: <fernanda@filmelab.com>
+Received: from cm12.websitewelcome.com (cm12.websitewelcome.com [100.42.49.8])
+	by gateway20.websitewelcome.com (Postfix) with ESMTP id 5625640356524
+	for <suelybregnoles@natura.net>; Fri, 21 Jan 2022 05:33:46 -0600 (CST)
+Received: from srv246.prodns.com.br ([162.241.3.16])
+	by cmsmtp with SMTP
+	id AsAsnO4bg9AGSAsAsnkt0T; Fri, 21 Jan 2022 05:33:46 -0600
+X-Authority-Reason: nr=8
+DKIM-Signature: v=1; a=rsa-sha256; q=dns/txt; c=relaxed/relaxed;
+	d=filmelab.com; s=default; h=Content-Type:MIME-Version:Message-ID:Date:
+	Subject:In-Reply-To:References:To:From:Sender:Reply-To:Cc:
+	Content-Transfer-Encoding:Content-ID:Content-Description:Resent-Date:
+	Resent-From:Resent-Sender:Resent-To:Resent-Cc:Resent-Message-ID:List-Id:
+	List-Help:List-Unsubscribe:List-Subscribe:List-Post:List-Owner:List-Archive;
+	bh=w5W0NItXn+hV/zjRE1QfqkrezAXMtDZfDJ5ruZCxNLM=; b=lXkY3y+q5i8qrIguGIf9Q1QGRU
+	j+shW0kg6LLMRYKST+CU2NOgKjkY0tK7nBqqIy4IpX/U2UXZsJdoo8RyEObjlXHGHHNaHNXkrV01a
+	YBMPyseFygyw7+WRL6YgiE9MzSnyy5vAwVCkp9jkpB/mSoVO3BUZvf/I9UJ3s6hVNxnjrH2Zb4iHl
+	SWLPtMrhRyfGsvgti2XgmGqZtJL6+4DmNmurmCghJCrOiJk7/enTi35phQeND54tQaUva/2S0dSYy
+	HJJ7FKXhZvcH4efO7wFcFxJoWTBibMBtgxzn7WpF2tI94/FK/N+WW6hnnHBrFB2AsevJLrwG1ibno
+	Wgq9RuzQ==;
+Received: from [179.232.120.123] (port=14659 helo=Tarsisbook)
+	by srv246.prodns.com.br with esmtpsa  (TLS1.2) tls TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	(Exim 4.94.2)
+	(envelope-from <fernanda@filmelab.com>)
+	id 1nAsAr-001AvG-7J; Fri, 21 Jan 2022 08:33:46 -0300
+From: <fernanda@filmelab.com>
+To: "'SUELY BREGNOLES'" <SUELYBREGNOLES@natura.net>,
+	"'ARI VILHA DIAS'" <ARIDIAS@natura.net>,
+	<will@filmelab.com>
+References: <SC1PR80MB43660CF1A872844BFD6E3A57A96E9@SC1PR80MB4366.lamprd80.prod.outlook.com> <C881613C-0136-4772-9657-B46931EAC1DC@gmail.com> <01c101d7eb98$39407180$abc15480$@filmelab.com> <SC1PR80MB4366ADEE80FC3329A34855A8A96E9@SC1PR80MB4366.lamprd80.prod.outlook.com> <007001d7f0ea$e9facbe0$bdf063a0$@filmelab.com> <SC1PR80MB4366583145B48F1AE970467DA9759@SC1PR80MB4366.lamprd80.prod.outlook.com>  <021f01d80893$e36bb0d0$aa431270$@filmelab.com> <FR1PR80MB43592D7DFAAF533B95F96626A9549@FR1PR80MB4359.lamprd80.prod.outlook.com> <025101d80943$d3205540$7960ffc0$@filmelab.com> <SC1PR80MB4366F4DEF4A581F87DD484F0A95A9@SC1PR80MB4366.lamprd80.prod.outlook.com>
+In-Reply-To: <SC1PR80MB4366F4DEF4A581F87DD484F0A95A9@SC1PR80MB4366.lamprd80.prod.outlook.com>
+Subject: =?utf-8?Q?RES:_Or=C3=A7amento_de_Atualiza=C3=A7=C3=B5es_T?=
+	=?utf-8?Q?rilhas_Antigas_2022?=
+Date: Fri, 21 Jan 2022 08:33:44 -0300
+Message-ID: <01e401d80eba$c0b912d0$422b3870$@filmelab.com>
+MIME-Version: 1.0
+Content-Type: multipart/related;
+	boundary="----=_NextPart_000_01E5_01D80EA1.9B6E24C0"
+X-Mailer: Microsoft Outlook 16.0
+Thread-Index: AQLi7QjNxG9+MtFMqvSZFYGltqMHzgGLka5EAmrN6oIB3qLB1gEqRDRBAaEIxPgDefWLIQL6lb9/AdpmiNEBq2GAU6nCxjQw
+Content-Language: pt-br
+X-AntiAbuse: This header was added to track abuse, please include it with any abuse report
+X-AntiAbuse: Primary Hostname - srv246.prodns.com.br
+X-AntiAbuse: Original Domain - natura.net
+X-AntiAbuse: Originator/Caller UID/GID - [47 12] / [47 12]
+X-AntiAbuse: Sender Address Domain - filmelab.com
+X-BWhitelist: no
+X-Source-IP: 179.232.120.123
+X-Source-L: No
+X-Exim-ID: 1nAsAr-001AvG-7J
+X-Source: 
+X-Source-Args: 
+X-Source-Dir: 
+X-Source-Sender: (Tarsisbook) [179.232.120.123]:14659
+X-Source-Auth: fernanda@filmelab.com
+X-Email-Count: 8
+X-Org: HG=hgreseller_br;ORG=latam;
+X-Source-Cap: ZmlsbWVsYWI7aDJob3JzMjY7c3J2MjQ2LnByb2Rucy5jb20uYnI=
+X-Local-Domain: yes
